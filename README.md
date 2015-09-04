@@ -10,3 +10,4 @@ python crop.py
 python cluster.py
 ```
 
+You may want to configure the number of clusters ```K``` in ```cluster.py``` before clustering. 

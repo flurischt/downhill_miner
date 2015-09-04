@@ -45,6 +45,7 @@ def merge_result(k, labels, files):
         images_per_label[l].append(files[i])
     return images_per_label
 
+
 def copy_images(images_per_label, empty_dir=True):
     if empty_dir:
         if os.path.exists('clustered/'):
