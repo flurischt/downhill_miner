@@ -14,37 +14,34 @@ if os.path.exists('cropped/'):
 
 # build a background image using moving-averages
 avg = None
-for i, im in enumerate(filter(lambda x: 'jpg' in x, os.listdir('images/'))):
-    image = Image.open('images/' + im).convert('L')
+i = 0
+for im in filter(lambda x: 'jpg' in x, os.listdir('images/')):
+    image = Image.open('images/' + im)
     data = np.array(image).copy()
-    if data.mean() < 100:  # skip black images
+    if data.mean() < 100:  # skip dark (night) images
         continue
     if not avg:
         avg = image
     else:
         avg = Image.blend(avg, image, 1.0/float(i+1))
+        i = i+1
 
 #avg.show()
-#avg = np.array(avg.convert('RGBA'))
 avg = np.array(avg).copy()
 
-for im in filter(lambda x: 'jpg' in x, os.listdir('images/')):
+for im in list(filter(lambda x: 'jpg' in x, os.listdir('images/'))):
     image = Image.open('images/' + im)
-# TODO: compute a mask (see below) and use only pixels that belong to the rider for clustering
-#    # create a b/w image-mask where white=foreground and black=background
-#    bw = image.convert('L')
-#    mask = np.array(bw).copy()
-#    mask = np.absolute(mask - avg)
-#    mask[mask < 200] = 0
-#    mask[mask >= 200] = 255
-#    #new_image = Image.fromarray(mask).show()
-#    # only keep masked pixels
-#    orig = np.array(image)
-#    orig[:,:,0][mask != 255] = 0
-#    orig[:,:,1][mask != 255] = 0
-#    orig[:,:,2][mask != 255] = 0
-#    orig = Image.fromarray(orig)
-    orig = image
-    width, height = orig.size
-    cropped = orig.crop((int(width/4), int(height/5), int(3*width/4), int(2*height/3)))
-    cropped.save('cropped/' + im.replace('jpg', 'bmp'))
+    # compute a 480x640 b/w-mask with pixel=255 => could be an object, pixel=0 => pixel is background
+    mask = np.array(image).copy()
+    mask = np.absolute(mask - avg)
+    bw = Image.fromarray(mask).convert('L')
+    mask = np.array(bw)
+    mask[mask < 200] = 0
+    mask[mask >= 200] = 255
+    # now hide everything in the background (make it transparent)
+    image.putalpha(Image.fromarray(mask))
+    #image.show() # transparency effect not visible here. export to png and have a look at it there
+    # crop and export
+    width, height = image.size
+    cropped = image.crop((int(width/4), int(height/5), int(3*width/4), int(2*height/3)))
+    cropped.save('cropped/' + im.replace('jpg', 'png'))
